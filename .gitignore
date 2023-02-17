@@ -1,0 +1,12 @@
+# dependencies
+/node_modules
+
+# testing
+/coverage
+
+# production
+/dist
+
+# local test file
+/src/index.ts
+/.env.local

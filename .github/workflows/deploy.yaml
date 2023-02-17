@@ -1,0 +1,75 @@
+name: Deploy Lambda function to AWS
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  AWS_REGION: ap-southeast-1
+  LAMBDA_FUNCTION_NAME: send-email
+  ZIP_FILE_NAME: lambda.zip
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          SOURCE: ${{ secrets.SOURCE }}
+          REGION: ${{ secrets.REGION }}
+        run: npm test --AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID --AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY --SOURCE=$SOURCE --REGION=$REGION
+        # run: npm test
+
+      - name: Build TypeScript code
+        run: npm run build
+
+      - name: Zip code package
+        run: |
+          if [ -d "dist" ]; then
+            cp package.json dist/package.json
+            cd dist 
+            npm install --production
+            cd ..
+            zip -r $ZIP_FILE_NAME dist
+          else
+            echo "Dist directory not found"
+            exit 1
+          fi
+      - name: Authenticate with AWS CLI
+        id: login
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # - name: Create Lambda function
+      #   run: |
+      #     aws lambda create-function \
+      #       --function-name $LAMBDA_FUNCTION_NAME \
+      #       --handler app.handler \
+      #       --runtime nodejs16.x \
+      #       --role arn:aws:iam::070583521204:role/service-role/email-service-role-c66aj4g1 \
+      #       --zip-file fileb://$ZIP_FILE_NAME \
+      #       --region $AWS_REGION
+
+      - name: Update Lambda function
+        run: |
+          aws lambda update-function-code \
+            --function-name $LAMBDA_FUNCTION_NAME \
+            --zip-file fileb://$ZIP_FILE_NAME \
+            --region $AWS_REGION
