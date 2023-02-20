@@ -2,7 +2,7 @@
 This is a microservice for sending email messages. It provides a REST API for accepting email requests and uses the AWS SES service to send the messages.
 
 ## Architecture Diagram 
-![image](https://user-images.githubusercontent.com/70573502/219402231-75d66ecf-1b72-4862-84e2-a44a8ffa4038.png)
+![image](https://user-images.githubusercontent.com/70573502/219997976-1d848d80-068a-4225-89de-46b4af9ae76c.png)
 
 ## Prerequisites
 To run this microservice, you will need the following:
